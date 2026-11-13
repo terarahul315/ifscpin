@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color" content="#030a1c">
+    <meta name="color-scheme" content="dark">
+
+    <title>IFSCPin – IFSC Code & Pincode Finder India</title>
+
+    <meta name="description" content="Find Indian bank branch IFSC codes and India Post PIN codes quickly with IFSCPin. Search banks, branches, cities and postal areas.">
+    <meta name="keywords" content="IFSC code finder, IFSC search India, bank branch search, SBI IFSC, HDFC IFSC, India pincode finder">
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:title" content="IFSCPin – Find IFSC Codes & Pincodes Easily">
+    <meta property="og:description" content="Search Indian bank IFSC codes, Google Maps branch locations, and India Post PIN codes in one place.">
+    <meta property="og:type" content="website">
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2'%3E%3Cpath d='M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="style.css">
+
+    <script src="script.js" defer></script>
+  <link rel="icon" type="image/png" href="favicon.png">
+
+</head>
+
+<body>
+
+<div class="glow-bg glow-left"></div>
+<div class="glow-bg glow-right"></div>
+
+<!-- NAVBAR -->
+<header class="navbar">
+    <a href="index.html" class="brand" aria-label="IFSCPin Home">
+        <span class="brand-icon-svg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/>
+            </svg>
+        </span>
+        <span>IFSC<span class="brand-cyan">Pin</span></span>
+    </a>
+
+    <nav class="nav-links" aria-label="Main navigation">
+        <a href="#top">Home</a>
+        <a href="#popular">Banks</a>
+        <a href="#support">Contact</a>
+        <a href="https://reelsave-rouge.vercel.app/" target="_blank" rel="noopener noreferrer" class="nav-promo">
+            ⚡ ReelSave
+        </a>
+    </nav>
+
+    <div class="lang-switch">
+        <button type="button" class="lang-btn active" id="langEn" onclick="setLang('en')">EN</button>
+        <button type="button" class="lang-btn" id="langHi" onclick="setLang('hi')">हिंदी</button>
+    </div>
+</header>
+
+<!-- MAIN CONTENT -->
+<main class="container" id="top">
+
+    <!-- HERO SECTION -->
+    <section class="hero-grid">
+        <div class="hero-left">
+            <div class="trust-badge" id="trustBadge">✓ Free Bank & Postal Code Search</div>
+
+            <h1 id="heroTitle">
+                Find IFSC Code <br>
+                <span class="cyan-text">Quickly & Easily</span>
+            </h1>
+
+            <p class="subtitle" id="heroSub">
+                Search Indian bank branch IFSC codes, branch details on Maps and India Post PIN codes with a simple search.
+            </p>
+
+            <!-- SEARCH MODES -->
+            <div class="tabs-wrap">
+                <button type="button" class="mode-tab active" data-mode="ifsc" onclick="switchMode('ifsc')" id="tabIfsc">🏦 IFSC Lookup</button>
+                <button type="button" class="mode-tab" data-mode="pincode" onclick="switchMode('pincode')" id="tabPin">📮 Pincode</button>
+                <button type="button" class="mode-tab" data-mode="area" onclick="switchMode('area')" id="tabArea">🔍 City / Area</button>
+            </div>
+
+            <!-- SEARCH CARD -->
+            <section class="search-card" aria-label="Bank and pincode search">
+                <form id="lookupForm">
+                    <label id="inputLabel" for="searchInput" class="input-label">Enter 11-Character IFSC Code</label>
+                    <div class="input-row">
+                        <span class="search-icon" aria-hidden="true">🔍</span>
+                        <input
+                            type="text"
+                            id="searchInput"
+                            placeholder="Enter IFSC Code, Pincode, or Area..."
+                            autocomplete="off"
+                            required
+                            aria-label="Search IFSC code or pincode"
+                        >
+                        <button type="submit" id="searchBtn" class="btn-search">Search</button>
+                    </div>
+                </form>
+
+                <!-- EXAMPLE SEARCHES -->
+                <div class="examples-row" id="examplesRow">
+                    <span>Try:</span>
+                    <button type="button" class="ex-chip" onclick="quickFill('SBIN0000691')">SBIN0000691</button>
+                    <button type="button" class="ex-chip" onclick="quickFill('HDFC0000001')">HDFC0000001</button>
+                    <button type="button" class="ex-chip" onclick="quickFill('ICIC0000001')">ICIC0000001</button>
+                </div>
+
+                <div id="statusMsg" class="status-msg" role="status" aria-live="polite"></div>
+                <div id="resultBox" class="result-box hidden"></div>
+            </section>
+
+            <!-- RECENT SEARCHES -->
+            <div id="recentSearches"></div>
+        </div>
+
+        <!-- NEON BANK ILLUSTRATION -->
+        <div class="hero-right">
+            <div class="bank-glow-frame">
+                <svg viewBox="0 0 260 240" fill="none" class="neon-bank-svg" role="img" aria-label="Neon glowing bank illustration">
+                    <defs>
+                        <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#38bdf8"/>
+                            <stop offset="100%" stop-color="#2563eb"/>
+                        </linearGradient>
+                    </defs>
+                    <ellipse cx="130" cy="205" rx="110" ry="18" stroke="#38bdf8" stroke-opacity="0.35" stroke-width="2"/>
+                    <ellipse cx="130" cy="205" rx="85" ry="12" stroke="#2563eb" stroke-opacity="0.6" stroke-width="2"/>
+                    <rect x="40" y="182" width="180" height="14" rx="4" fill="#0f295c" stroke="url(#neonGrad)" stroke-width="2"/>
+                    <rect x="52" y="170" width="156" height="12" rx="3" fill="#0a1f47" stroke="url(#neonGrad)" stroke-width="2"/>
+                    <rect x="64" y="96" width="18" height="74" rx="3" fill="#081a3d" stroke="#38bdf8" stroke-width="2"/>
+                    <rect x="102" y="96" width="18" height="74" rx="3" fill="#081a3d" stroke="#38bdf8" stroke-width="2"/>
+                    <rect x="140" y="96" width="18" height="74" rx="3" fill="#081a3d" stroke="#38bdf8" stroke-width="2"/>
+                    <rect x="178" y="96" width="18" height="74" rx="3" fill="#081a3d" stroke="#38bdf8" stroke-width="2"/>
+                    <polygon points="130,28 32,84 228,84" fill="#0a1f47" stroke="url(#neonGrad)" stroke-width="2.5"/>
+                    <rect x="48" y="84" width="164" height="14" rx="3" fill="#0f295c" stroke="#38bdf8" stroke-width="2"/>
+                    <rect x="92" y="54" width="76" height="22" rx="5" fill="#030a1c" stroke="#38bdf8" stroke-width="1.5"/>
+                    <text x="130" y="69" text-anchor="middle" fill="#38bdf8" font-family="Arial, sans-serif" font-weight="bold" font-size="12" letter-spacing="2">BANK</text>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="features-4">
+        <div class="f-card">
+            <div class="f-icon">⚡</div>
+            <h3>Fast Search</h3>
+            <p>Easy and quick lookup</p>
+        </div>
+        <div class="f-card">
+            <div class="f-icon">🛡️</div>
+            <h3>Useful Details</h3>
+            <p>Bank branch information</p>
+        </div>
+        <div class="f-card">
+            <div class="f-icon">📍</div>
+            <h3>All India Search</h3>
+            <p>Bank and postal lookup</p>
+        </div>
+        <div class="f-card">
+            <div class="f-icon">💬</div>
+            <h3>Easy to Use</h3>
+            <p>Simple search experience</p>
+        </div>
+    </section>
+
+    <!-- POPULAR BANKS -->
+    <section class="popular-banks" id="popular">
+        <h2 id="howHeading">Popular Banks</h2>
+        <div class="banks-pill-row">
+            <button type="button" class="bank-pill" onclick="switchMode('ifsc'); quickFill('SBIN0000691')">🏦 SBI</button>
+            <button type="button" class="bank-pill" onclick="switchMode('ifsc'); quickFill('HDFC0000001')">🏛️ HDFC Bank</button>
+            <button type="button" class="bank-pill" onclick="switchMode('ifsc'); quickFill('ICIC0000001')">💳 ICICI Bank</button>
+            <button type="button" class="bank-pill" onclick="switchMode('ifsc'); quickFill('KKBK0000958')">🔴 Kotak Mahindra</button>
+            <button type="button" class="bank-pill" onclick="switchMode('ifsc'); quickFill('UTIB0000001')">🟣 Axis Bank</button>
+            <button type="button" class="bank-pill" onclick="switchMode('ifsc'); quickFill('PUNB0001000')">🟡 PNB</button>
+        </div>
+    </section>
+
+    <!-- ADVERTISEMENT SPACE -->
+    <section class="ad-slot" aria-label="Advertisement">
+        <div class="ad-box">Advertisement</div>
+    </section>
+
+    <!-- CONTACT SUPPORT -->
+    <section class="support-section" id="support">
+        <h2>Need Help or Have a Query?</h2>
+        <p class="support-sub">Have a question, suggestion or website feedback? Connect directly:</p>
+
+        <div class="contact-cards-grid">
+            <!-- EMAIL -->
+            <a href="mailto:rm6129306@gmail.com" class="contact-card gmail-card">
+                <div class="c-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="c-label">Email Support</div>
+                    <div class="c-val">rm6129306@gmail.com</div>
+                </div>
+            </a>
+
+            <!-- WHATSAPP -->
+            <a href="https://wa.me/918934023097" target="_blank" rel="noopener noreferrer" class="contact-card wa-card">
+                <div class="c-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12.03 2c-5.51 0-9.97 4.46-9.97 9.97 0 1.76.46 3.48 1.34 4.99L2 22l5.18-1.36c1.47.8 3.12 1.23 4.85 1.23 5.51 0 9.97-4.46 9.97-9.97C22 6.46 17.54 2 12.03 2zm5.82 14.12c-.24.68-1.41 1.3-1.95 1.38-.51.08-1.16.11-1.88-.12-.44-.14-1-.33-1.71-.64-3.01-1.3-4.97-4.33-5.12-4.53-.15-.2-1.22-1.62-1.22-3.09 0-1.47.77-2.19 1.04-2.49.27-.3.59-.38.79-.38h.57c.18 0 .43-.07.67.51.25.6.85 2.07.92 2.22.07.15.12.32.02.52-.1.2-.15.32-.3.5-.15.17-.31.39-.45.52-.15.15-.3.31-.13.61.17.3.77 1.27 1.66 2.06 1.14 1.02 2.1 1.34 2.4 1.49.3.15.47.12.65-.08.17-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.27.1 1.74.82 2.04.97.3.15.5.22.57.35.08.12.08.73-.16 1.41z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="c-label">WhatsApp Support</div>
+                    <div class="c-val">+91 89340 23097</div>
+                </div>
+            </a>
+
+            <!-- INSTAGRAM (COMPLETE SVG ICON) -->
+            <a href="https://instagram.com/_tera_rahul_315" target="_blank" rel="noopener noreferrer" class="contact-card ig-card">
+                <div class="c-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="c-label">Instagram</div>
+                    <div class="c-val">@_tera_rahul_315</div>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq-section">
+        <h2>Frequently Asked Questions</h2>
+        <div class="faq-list">
+            <div class="faq-item">
+                <button class="faq-q" type="button" aria-expanded="false">
+                    What is an IFSC Code and where is it used?
+                    <span>+</span>
+                </button>
+                <div class="faq-a">
+                    <p>IFSC stands for Indian Financial System Code. It is an 11-character code used to identify bank branches for electronic fund transfers.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-q" type="button" aria-expanded="false">
+                    How can I find an India Post Pincode?
+                    <span>+</span>
+                </button>
+                <div class="faq-a">
+                    <p>Select the Pincode or City / Area tab, enter your location details and search for matching postal information.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer-inner">
+        <div>
+            <strong>IFSCPin</strong> — Bank & Postal Code Finder
+            <p class="footer-note">
+                Our Other Project:
+                <a href="https://reelsave-rouge.vercel.app/" target="_blank" rel="noopener noreferrer">⚡ ReelSave</a>
+            </p>
+        </div>
+
+        <div class="footer-links">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms</a>
+            <a href="#support">Contact</a>
+        </div>
+    </div>
+
+    <p class="copyright">© 2026 IFSCPin. All Rights Reserved.</p>
+</footer>
+
+</body>
+</html>
