@@ -1,7 +1,6 @@
-
 /* ==========================================
    IFSCPin — PROFESSIONAL EDITION
-   IFSC | PINCODE | AREA | HI/EN
+   IFSC | PINCODE | AREA | BANK FINDER | HI/EN
 ========================================== */
 
 "use strict";
@@ -97,7 +96,6 @@ function switchMode(mode) {
     const input = $("searchInput");
     const label = $("inputLabel");
     const examples = $("examplesRow");
-    const t = TEXT[currentLang];
 
     document.querySelectorAll(".mode-tab").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.mode === mode);
@@ -231,6 +229,9 @@ function renderRecent() {
 
     wrap.querySelectorAll(".recent-chip").forEach(btn => {
         btn.addEventListener("click", () => {
+            $("bankFinderBox").classList.add("hidden");
+            $("lookupForm").classList.remove("hidden");
+            $("examplesRow").classList.remove("hidden");
             switchMode(btn.dataset.mode);
             quickFill(btn.dataset.query);
         });
@@ -582,57 +583,32 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 });
+
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
         navigator.serviceWorker.register("/sw.js").catch(() => {});
     });
 }
+
 /* ==========================================
-   FIND BY BANK -> STATE -> DISTRICT -> BRANCH
+   LIGHT / DARK MODE + FIXED BANK FINDER
 ========================================== */
-const STATE_ISO = {
-    "ANDAMAN AND NICOBAR ISLANDS": "IN-AN",
-    "ANDHRA PRADESH": "IN-AP",
-    "ARUNACHAL PRADESH": "IN-AR",
-    "ASSAM": "IN-AS",
-    "BIHAR": "IN-BR",
-    "CHANDIGARH": "IN-CH",
-    "CHHATTISGARH": "IN-CT",
-    "DADRA AND NAGAR HAVELI": "IN-DN",
-    "DADRA AND NAGAR HAVELI AND DAMAN AND DIU": "IN-DH",
-    "DAMAN AND DIU": "IN-DD",
-    "DELHI": "IN-DL",
-    "GOA": "IN-GA",
-    "GUJARAT": "IN-GJ",
-    "HARYANA": "IN-HR",
-    "HIMACHAL PRADESH": "IN-HP",
-    "JAMMU AND KASHMIR": "IN-JK",
-    "JHARKHAND": "IN-JH",
-    "KARNATAKA": "IN-KA",
-    "KERALA": "IN-KL",
-    "LADAKH": "IN-LA",
-    "LAKSHADWEEP": "IN-LD",
-    "MADHYA PRADESH": "IN-MP",
-    "MAHARASHTRA": "IN-MH",
-    "MANIPUR": "IN-MN",
-    "MEGHALAYA": "IN-ML",
-    "MIZORAM": "IN-MZ",
-    "NAGALAND": "IN-NL",
-    "ODISHA": "IN-OR",
-    "ORISSA": "IN-OR",
-    "PUDUCHERRY": "IN-PY",
-    "PUNJAB": "IN-PB",
-    "RAJASTHAN": "IN-RJ",
-    "SIKKIM": "IN-SK",
-    "TAMIL NADU": "IN-TN",
-    "TELANGANA": "IN-TG",
-    "TRIPURA": "IN-TR",
-    "UTTAR PRADESH": "IN-UP",
-    "UTTARAKHAND": "IN-UT",
-    "WEST BENGAL": "IN-WB"
-};
+
+function toggleTheme() {
+    const isLight = document.body.classList.toggle("light-mode");
+    const btn = $("themeToggle");
+    if (btn) btn.textContent = isLight ? "🌙" : "☀️";
+    localStorage.setItem("ifscpin_theme", isLight ? "light" : "dark");
+}
+
+if (localStorage.getItem("ifscpin_theme") === "light") {
+    document.body.classList.add("light-mode");
+    const btn = $("themeToggle");
+    if (btn) btn.textContent = "🌙";
+}
 
 let banksLoaded = false;
+let currentBankBranches = [];
 
 function openBankFinder(btn) {
     document.querySelectorAll(".mode-tab").forEach((t) => t.classList.remove("active"));
@@ -663,7 +639,7 @@ async function loadAllBanks() {
         const data = await res.json();
         const entries = Object.entries(data).sort((a, b) => a[1].localeCompare(b[1]));
         sel.innerHTML = '<option value="">-- Select Bank --</option>' +
-            entries.map(([code, name]) => `<option value="${code}">${name} (${code})</option>`).join("");
+            entries.map(([code, name]) => `<option value="${escapeHTML(code)}">${escapeHTML(name)} (${escapeHTML(code)})</option>`).join("");
         banksLoaded = true;
     } catch {
         sel.innerHTML = '<option value="">Failed to load banks. Refresh page.</option>';
@@ -683,12 +659,32 @@ function selectQuickBank(code) {
     }
 }
 
+async function fetchBankJson(bankcode) {
+    const urls = [
+        `https://cdn.jsdelivr.net/gh/razorpay/ifsc-api@master/data/${encodeURIComponent(bankcode)}.json`,
+        `https://raw.githubusercontent.com/razorpay/ifsc-api/master/data/${encodeURIComponent(bankcode)}.json`
+    ];
+    for (const url of urls) {
+        try {
+            const res = await fetch(url);
+            if (!res.ok) continue;
+            const raw = await res.json();
+            return Array.isArray(raw)
+                ? raw
+                : Object.entries(raw).map(([ifsc, obj]) => ({ IFSC: ifsc, ...obj }));
+        } catch {}
+    }
+    return null;
+}
+
 $("bfBank").addEventListener("change", async function () {
     const bankcode = this.value;
     const stateSel = $("bfState");
     const distSel = $("bfDistrict");
     const brSel = $("bfBranch");
     $("resultBox").classList.add("hidden");
+    $("statusMsg").textContent = "";
+    currentBankBranches = [];
     distSel.innerHTML = '<option value="">Select State first</option>';
     distSel.disabled = true;
     brSel.innerHTML = '<option value="">Select District first</option>';
@@ -700,53 +696,49 @@ $("bfBank").addEventListener("change", async function () {
         return;
     }
 
-    stateSel.innerHTML = '<option value="">Loading states...</option>';
+    stateSel.innerHTML = '<option value="">Loading states (wait 2 sec)...</option>';
     stateSel.disabled = true;
-    try {
-        const res = await fetch(`https://ifsc.razorpay.com/places?bankcode=${encodeURIComponent(bankcode)}`);
-        const data = await res.json();
-        const states = (data.states || []).sort();
-        stateSel.innerHTML = '<option value="">-- Select State --</option>' +
-            states.map((s) => `<option value="${s}">${s}</option>`).join("");
-        stateSel.disabled = false;
-    } catch {
-        stateSel.innerHTML = '<option value="">No states found</option>';
+
+    const list = await fetchBankJson(bankcode);
+    if (!list || list.length === 0) {
+        stateSel.innerHTML = '<option value="">No data found for this bank</option>';
+        return;
     }
+
+    currentBankBranches = list;
+    const states = [...new Set(list.map((b) => (b.STATE || "OTHER").toUpperCase()))].sort();
+    stateSel.innerHTML = '<option value="">-- Select State --</option>' +
+        states.map((s) => `<option value="${escapeHTML(s)}">${escapeHTML(s)}</option>`).join("");
+    stateSel.disabled = false;
 });
 
-$("bfState").addEventListener("change", async function () {
-    const bankcode = $("bfBank").value;
-    const stateName = this.value;
+$("bfState").addEventListener("change", function () {
+    const state = this.value;
     const distSel = $("bfDistrict");
     const brSel = $("bfBranch");
     $("resultBox").classList.add("hidden");
     brSel.innerHTML = '<option value="">Select District first</option>';
     brSel.disabled = true;
 
-    if (!stateName) {
+    if (!state) {
         distSel.innerHTML = '<option value="">Select State first</option>';
         distSel.disabled = true;
         return;
     }
 
-    const iso = STATE_ISO[stateName.toUpperCase()] || "";
-    distSel.innerHTML = '<option value="">Loading districts...</option>';
-    distSel.disabled = true;
-    try {
-        const res = await fetch(`https://ifsc.razorpay.com/places?bankcode=${encodeURIComponent(bankcode)}&state=${encodeURIComponent(iso)}`);
-        const data = await res.json();
-        const districts = (data.districts || []).sort();
-        distSel.innerHTML = '<option value="">-- Select District --</option>' +
-            districts.map((d) => `<option value="${d}">${d}</option>`).join("");
-        distSel.disabled = false;
-    } catch {
-        distSel.innerHTML = '<option value="">No districts found</option>';
-    }
+    const districts = [...new Set(
+        currentBankBranches
+            .filter((b) => (b.STATE || "OTHER").toUpperCase() === state)
+            .map((b) => (b.DISTRICT || b.CITY || "OTHER").toUpperCase())
+    )].sort();
+
+    distSel.innerHTML = '<option value="">-- Select District --</option>' +
+        districts.map((d) => `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join("");
+    distSel.disabled = false;
 });
 
-$("bfDistrict").addEventListener("change", async function () {
-    const bankcode = $("bfBank").value;
-    const stateName = $("bfState").value;
+$("bfDistrict").addEventListener("change", function () {
+    const state = $("bfState").value;
     const district = this.value;
     const brSel = $("bfBranch");
     $("resultBox").classList.add("hidden");
@@ -757,51 +749,27 @@ $("bfDistrict").addEventListener("change", async function () {
         return;
     }
 
-    const iso = STATE_ISO[stateName.toUpperCase()] || "";
-    brSel.innerHTML = '<option value="">Loading branches...</option>';
-    brSel.disabled = true;
-    try {
-        const res = await fetch(`https://ifsc.razorpay.com/places?bankcode=${encodeURIComponent(bankcode)}&state=${encodeURIComponent(iso)}&district=${encodeURIComponent(district)}`);
-        const data = await res.json();
-        const branches = (data.branches || []).sort();
-        brSel.innerHTML = '<option value="">-- Select Branch --</option>' +
-            branches.map((b) => `<option value="${b}">${b}</option>`).join("");
-        brSel.disabled = false;
-    } catch {
-        brSel.innerHTML = '<option value="">No branches found</option>';
-    }
+    const branches = currentBankBranches
+        .filter((b) =>
+            (b.STATE || "OTHER").toUpperCase() === state &&
+            (b.DISTRICT || b.CITY || "OTHER").toUpperCase() === district
+        )
+        .sort((a, b) => (a.BRANCH || "").localeCompare(b.BRANCH || ""));
+
+    brSel.innerHTML = '<option value="">-- Select Branch --</option>' +
+        branches.map((b) => `<option value="${escapeHTML(b.IFSC)}">${escapeHTML(b.BRANCH)} (${escapeHTML(b.IFSC)})</option>`).join("");
+    brSel.disabled = false;
 });
 
 $("bfBranch").addEventListener("change", async function () {
-    const bankcode = $("bfBank").value;
-    const stateName = $("bfState").value;
-    const district = $("bfDistrict").value;
-    const branch = this.value;
-    if (!branch) return;
-
-    const iso = STATE_ISO[stateName.toUpperCase()] || "";
-    $("statusMsg").textContent = "Fetching IFSC details...";
+    const ifsc = this.value;
+    if (!ifsc) return;
+    $("resultBox").classList.add("hidden");
+    setStatus(TEXT[currentLang].fetching, "info");
     try {
-        let offset = 0;
-        let found = null;
-        while (!found && offset <= 200) {
-            const res = await fetch(`https://ifsc.razorpay.com/search?bankcode=${encodeURIComponent(bankcode)}&state=${encodeURIComponent(iso)}&limit=50&offset=${offset}`);
-            const list = await res.json();
-            if (!Array.isArray(list) || list.length === 0) break;
-            found = list.find((item) => item.BRANCH && item.BRANCH.toUpperCase() === branch.toUpperCase() && (!item.DISTRICT || item.DISTRICT.toUpperCase() === district.toUpperCase()));
-            if (list.length < 50) break;
-            offset += 50;
-        }
-        if (found && found.IFSC) {
-            $("statusMsg").textContent = "✓ IFSC Code found!";
-            if (typeof quickFill === "function") {
-                $("tabIfsc").click();
-                quickFill(found.IFSC);
-            }
-        } else {
-            $("statusMsg").textContent = "Branch details not found. Try another branch.";
-        }
+        await searchIFSC(ifsc);
+        setStatus(TEXT[currentLang].verified, "success");
     } catch {
-        $("statusMsg").textContent = "Error fetching branch details.";
+        setStatus(TEXT[currentLang].error, "error");
     }
 });
