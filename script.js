@@ -1,12 +1,15 @@
 /* ==========================================
-   IFSCPin — PROFESSIONAL EDITION
-   IFSC | PINCODE | AREA | BANK FINDER | HI/EN
+   IFSCPin — COMPLETE 10-IN-1 EDITION
+   Smart Search | Bank Directory | Nearby GPS
+   Copy IFSC/All | Favorites | Division | Share
+   Feedback/Report | Source | Light/Dark + Retry
 ========================================== */
 
 "use strict";
 
 let currentMode = "ifsc";
 let currentLang = "en";
+let lastRetryFn = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -15,84 +18,96 @@ const TEXT = {
         badge: "✓ Free Bank & India Post Directory",
         title: 'Find Bank <span class="cyan-text">IFSC</span> & <span class="cyan-text">Pincode</span> Instantly',
         sub: "Find bank branch details, IFSC codes, MICR information and India Post Pincodes.",
-        how: "Built for Speed, Accuracy & Everyday Help",
+        how: "Popular Banks",
         search: "Search",
         loading: "Searching...",
         fetching: "Fetching details...",
-        found: "Search completed successfully!",
-        error: "Something went wrong. Please try again.",
+        found: "Search completed!",
+        error: "Something went wrong. Please retry.",
         empty: "Please enter something to search.",
-        invalidIFSC: "Enter a valid 11-character IFSC code.",
-        invalidPIN: "Enter a valid 6-digit Pincode.",
+        invalidIFSC: "Not a valid 11-character IFSC (e.g. SBIN0000691). Don't know IFSC? Use 'Find by Bank'!",
+        invalidPIN: "Enter a valid 6-digit Pincode (e.g. 226001).",
         shortArea: "Enter at least 3 characters.",
-        noData: "No results found. Please check your search.",
-        recent: "🕒 Recent Searches:",
+        noData: "No results found. Check spelling or try 'Find by Bank'.",
+        recent: "🕒 Recent:",
+        favs: "⭐ Favorites:",
         copied: "✓ Copied!",
-        copy: "📋 Copy Details",
-        verified: "✓ Bank details retrieved successfully!"
+        copyIfsc: "📋 Copy IFSC",
+        copyAll: "📋 Copy All",
+        verified: "✓ Bank details loaded!"
     },
-
     hi: {
         badge: "✓ फ्री बैंक और इंडिया पोस्ट डायरेक्टरी",
         title: 'बैंक <span class="cyan-text">IFSC</span> और <span class="cyan-text">पिनकोड</span> तुरंत खोजें',
         sub: "बैंक ब्रांच, IFSC कोड, MICR और इंडिया पोस्ट पिनकोड की जानकारी प्राप्त करें।",
-        how: "तेज़ और आसान सर्च के लिए बनाया गया",
+        how: "प्रमुख बैंक",
         search: "खोजें",
         loading: "खोज रहे हैं...",
         fetching: "जानकारी प्राप्त हो रही है...",
-        found: "सर्च सफलतापूर्वक पूरी हुई!",
-        error: "कुछ समस्या हुई। दोबारा कोशिश करें।",
+        found: "सर्च पूरी हुई!",
+        error: "कुछ समस्या हुई। फिर कोशिश करें।",
         empty: "कृपया कुछ लिखकर सर्च करें।",
-        invalidIFSC: "सही 11 अक्षरों का IFSC कोड डालें।",
-        invalidPIN: "सही 6 अंकों का पिनकोड डालें।",
+        invalidIFSC: "सही 11 अक्षरों का IFSC डालें। IFSC नहीं पता तो 'Find by Bank' चुनें!",
+        invalidPIN: "सही 6 अंकों का पिनकोड डालें (जैसे 226001)।",
         shortArea: "कम से कम 3 अक्षर डालें।",
-        noData: "कोई जानकारी नहीं मिली। दोबारा जाँचें।",
+        noData: "कोई जानकारी नहीं मिली। स्पेलिंग जाँचें या 'Find by Bank' आज़माएँ।",
         recent: "🕒 पिछली सर्च:",
+        favs: "⭐ पसंदीदा:",
         copied: "✓ कॉपी हो गया!",
-        copy: "📋 जानकारी कॉपी करें",
-        verified: "✓ बैंक की जानकारी प्राप्त हुई!"
+        copyIfsc: "📋 IFSC कॉपी",
+        copyAll: "📋 सब कॉपी",
+        verified: "✓ बैंक की जानकारी मिल गई!"
     }
 };
 
 function escapeHTML(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
     })[char]);
 }
 
 function setLang(lang) {
     if (!TEXT[lang]) return;
-
     currentLang = lang;
     const t = TEXT[lang];
-
     $("langEn").classList.toggle("active", lang === "en");
     $("langHi").classList.toggle("active", lang === "hi");
-
     $("trustBadge").textContent = t.badge;
     $("heroTitle").innerHTML = t.title;
     $("heroSub").textContent = t.sub;
     $("howHeading").textContent = t.how;
     $("searchBtn").textContent = t.search;
-
     renderRecent();
+    renderFavorites();
 }
 
-function setStatus(message, type = "info") {
+function setStatus(message, type = "info", showRetry = false, smartSuggestion = null) {
     const status = $("statusMsg");
-    status.textContent = message;
     status.className = "status-msg " + type;
+    status.textContent = message;
+
+    if (smartSuggestion) {
+        const sBtn = document.createElement("button");
+        sBtn.type = "button";
+        sBtn.className = "retry-btn";
+        sBtn.textContent = smartSuggestion.label;
+        sBtn.addEventListener("click", smartSuggestion.action);
+        status.appendChild(sBtn);
+    }
+
+    if (showRetry && typeof lastRetryFn === "function") {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "retry-btn";
+        btn.textContent = currentLang === "hi" ? "🔄 फिर कोशिश करें" : "🔄 Retry";
+        btn.addEventListener("click", () => lastRetryFn());
+        status.appendChild(btn);
+    }
 }
 
 function switchMode(mode) {
     if (!["ifsc", "pincode", "area"].includes(mode)) return;
-
     currentMode = mode;
-
     const input = $("searchInput");
     const label = $("inputLabel");
     const examples = $("examplesRow");
@@ -110,47 +125,28 @@ function switchMode(mode) {
         ifsc: {
             label: "Enter 11-Character IFSC Code",
             placeholder: "e.g. SBIN0000691",
-            examples: [
-                ["SBIN0000691", "SBIN0000691"],
-                ["HDFC0000001", "HDFC0000001"],
-                ["ICIC0000001", "ICIC0000001"]
-            ]
+            examples: [["SBIN0000691", "SBIN0000691"], ["HDFC0000001", "HDFC0000001"], ["ICIC0000001", "ICIC0000001"]]
         },
         pincode: {
             label: "Enter 6-Digit India Pincode",
             placeholder: "e.g. 226001",
-            examples: [
-                ["226001", "226001 (Lucknow)"],
-                ["110001", "110001 (Delhi)"],
-                ["400001", "400001 (Mumbai)"]
-            ]
+            examples: [["226001", "226001 (Lucknow)"], ["110001", "110001 (Delhi)"], ["400001", "400001 (Mumbai)"]]
         },
         area: {
             label: "Enter City or Area Name",
             placeholder: "e.g. Gomti Nagar, Jaipur",
-            examples: [
-                ["Gomti Nagar", "Gomti Nagar"],
-                ["Andheri", "Andheri"],
-                ["Jaipur", "Jaipur"]
-            ]
+            examples: [["Gomti Nagar", "Gomti Nagar"], ["Andheri", "Andheri"], ["Jaipur", "Jaipur"]]
         }
     };
 
     const config = settings[mode];
-
     label.textContent = config.label;
     input.placeholder = config.placeholder;
     input.style.textTransform = mode === "ifsc" ? "uppercase" : "none";
 
-    examples.innerHTML = `
-        <span>Try:</span>
-        ${config.examples.map(([value, display]) => `
-            <button type="button" class="ex-chip"
-                data-value="${escapeHTML(value)}">
-                ${escapeHTML(display)}
-            </button>
-        `).join("")}
-    `;
+    examples.innerHTML = `<span>Try:</span>` + config.examples.map(([v, d]) =>
+        `<button type="button" class="ex-chip" data-value="${escapeHTML(v)}">${escapeHTML(d)}</button>`
+    ).join("");
 
     examples.querySelectorAll(".ex-chip").forEach(btn => {
         btn.addEventListener("click", () => quickFill(btn.dataset.value));
@@ -162,44 +158,19 @@ function quickFill(value) {
     $("lookupForm").requestSubmit();
 }
 
-/* ==========================================
-   RECENT SEARCHES
-========================================== */
-
+/* RECENT & FAVORITES */
 function getRecent() {
     try {
-        const data = JSON.parse(
-            localStorage.getItem("ifscpin_recent") || "[]"
-        );
-
-        return Array.isArray(data)
-            ? data.filter(item =>
-                item &&
-                ["ifsc", "pincode", "area"].includes(item.mode) &&
-                typeof item.query === "string"
-            ).slice(0, 4)
-            : [];
-
-    } catch {
-        return [];
-    }
+        const data = JSON.parse(localStorage.getItem("ifscpin_recent") || "[]");
+        return Array.isArray(data) ? data.filter(i => i && ["ifsc", "pincode", "area"].includes(i.mode) && typeof i.query === "string").slice(0, 4) : [];
+    } catch { return []; }
 }
 
 function saveRecent(mode, query) {
     try {
-        let items = getRecent();
-
-        items = items.filter(item =>
-            !(item.mode === mode && item.query === query)
-        );
-
+        let items = getRecent().filter(i => !(i.mode === mode && i.query === query));
         items.unshift({ mode, query });
-
-        localStorage.setItem(
-            "ifscpin_recent",
-            JSON.stringify(items.slice(0, 4))
-        );
-
+        localStorage.setItem("ifscpin_recent", JSON.stringify(items.slice(0, 4)));
         renderRecent();
     } catch {}
 }
@@ -207,25 +178,11 @@ function saveRecent(mode, query) {
 function renderRecent() {
     const items = getRecent();
     const wrap = $("recentSearches");
+    if (!items.length) { wrap.innerHTML = ""; return; }
 
-    if (!items.length) {
-        wrap.innerHTML = "";
-        return;
-    }
-
-    wrap.innerHTML = `
-        <div class="recent-wrap">
-            <span>${TEXT[currentLang].recent}</span>
-            ${items.map(item => `
-                <button type="button"
-                    class="recent-chip"
-                    data-mode="${item.mode}"
-                    data-query="${escapeHTML(item.query)}">
-                    ${escapeHTML(item.query)}
-                </button>
-            `).join("")}
-        </div>
-    `;
+    wrap.innerHTML = `<div class="recent-wrap"><span>${TEXT[currentLang].recent}</span>` +
+        items.map(i => `<button type="button" class="recent-chip" data-mode="${i.mode}" data-query="${escapeHTML(i.query)}">${escapeHTML(i.query)}</button>`).join("") +
+        `</div>`;
 
     wrap.querySelectorAll(".recent-chip").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -238,43 +195,67 @@ function renderRecent() {
     });
 }
 
-/* ==========================================
-   API HELPER
-========================================== */
+function getFavorites() {
+    try {
+        const data = JSON.parse(localStorage.getItem("ifscpin_favs") || "[]");
+        return Array.isArray(data) ? data.slice(0, 5) : [];
+    } catch { return []; }
+}
 
+function toggleFavorite(ifsc, label) {
+    let favs = getFavorites();
+    const exists = favs.some(f => f.ifsc === ifsc);
+    if (exists) {
+        favs = favs.filter(f => f.ifsc !== ifsc);
+    } else {
+        favs.unshift({ ifsc, label });
+    }
+    localStorage.setItem("ifscpin_favs", JSON.stringify(favs.slice(0, 5)));
+    renderFavorites();
+    const btn = $("favIfscBtn");
+    if (btn) {
+        const saved = !exists;
+        btn.classList.toggle("saved", saved);
+        btn.textContent = saved ? "⭐ Saved" : "☆ Save";
+    }
+}
+
+function renderFavorites() {
+    const favs = getFavorites();
+    const wrap = $("favoriteBranches");
+    if (!wrap) return;
+    if (!favs.length) { wrap.innerHTML = ""; return; }
+
+    wrap.innerHTML = `<div class="recent-wrap"><span>${TEXT[currentLang].favs}</span>` +
+        favs.map(f => `<button type="button" class="recent-chip" data-ifsc="${escapeHTML(f.ifsc)}">⭐ ${escapeHTML(f.label)} (${escapeHTML(f.ifsc)})</button>`).join("") +
+        `</div>`;
+
+    wrap.querySelectorAll(".recent-chip").forEach(btn => {
+        btn.addEventListener("click", () => {
+            $("bankFinderBox").classList.add("hidden");
+            $("lookupForm").classList.remove("hidden");
+            $("examplesRow").classList.remove("hidden");
+            switchMode("ifsc");
+            quickFill(btn.dataset.ifsc);
+        });
+    });
+}
+
+/* API, COPY, SHARE, NEARBY GPS, REPORT */
 async function fetchData(url) {
     const controller = new AbortController();
-
-    const timeout = setTimeout(() => {
-        controller.abort();
-    }, 12000);
-
+    const timeout = setTimeout(() => controller.abort(), 12000);
     try {
-        const response = await fetch(url, {
-            signal: controller.signal
-        });
-
-        if (!response.ok) {
-            throw new Error("API_ERROR");
-        }
-
+        const response = await fetch(url, { signal: controller.signal });
+        if (!response.ok) throw new Error("API_ERROR");
         return await response.json();
-
     } catch (error) {
-        if (error.name === "AbortError") {
-            throw new Error("TIMEOUT");
-        }
-
+        if (error.name === "AbortError") throw new Error("TIMEOUT");
         throw error;
-
     } finally {
         clearTimeout(timeout);
     }
 }
-
-/* ==========================================
-   COPY HELPER
-========================================== */
 
 async function copyText(text, button) {
     try {
@@ -287,46 +268,69 @@ async function copyText(text, button) {
             area.style.opacity = "0";
             document.body.appendChild(area);
             area.select();
-
             const copied = document.execCommand("copy");
             area.remove();
-
             if (!copied) throw new Error("COPY_FAILED");
         }
-
         const original = button.textContent;
         button.textContent = TEXT[currentLang].copied;
-
-        setTimeout(() => {
-            button.textContent = original;
-        }, 1600);
-
+        setTimeout(() => { button.textContent = original; }, 1600);
     } catch {
         setStatus("Unable to copy. Please try again.", "error");
     }
 }
 
-/* ==========================================
-   IFSC SEARCH
-========================================== */
+async function shareResult(title, text) {
+    if (navigator.share) {
+        try {
+            await navigator.share({ title, text, url: "https://ifscpin.pages.dev/" });
+            return;
+        } catch {}
+    }
+    window.open("https://wa.me/?text=" + encodeURIComponent(text + "\n\nFind more: https://ifscpin.pages.dev/"), "_blank", "noopener,noreferrer");
+}
 
+function findNearbyBank(bankName) {
+    if (!navigator.geolocation) {
+        window.open("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(bankName + " near me"), "_blank", "noopener,noreferrer");
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            const { latitude, longitude } = pos.coords;
+            window.open(`https://www.google.com/maps/search/${encodeURIComponent(bankName)}/@${latitude},${longitude},14z`, "_blank", "noopener,noreferrer");
+        },
+        () => {
+            window.open("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(bankName + " near me"), "_blank", "noopener,noreferrer");
+        },
+        { timeout: 6000 }
+    );
+}
+
+function reportWrongData(contextLabel) {
+    const msg = `IFSCPin Wrong Data Report:\nItem: ${contextLabel}\nIssue: `;
+    window.open("https://wa.me/918934023097?text=" + encodeURIComponent(msg), "_blank", "noopener,noreferrer");
+}
+
+function sendFeedback(type) {
+    const input = $("feedbackInput");
+    const msg = (input ? input.value.trim() : "") || "Hi Rahul, feedback for IFSCPin:";
+    if (type === "wa") {
+        window.open("https://wa.me/918934023097?text=" + encodeURIComponent("IFSCPin Feedback:\n" + msg), "_blank", "noopener,noreferrer");
+    } else {
+        window.location.href = "mailto:rm6129306@gmail.com?subject=" + encodeURIComponent("IFSCPin Feedback / Report") + "&body=" + encodeURIComponent(msg);
+    }
+}
+
+/* SEARCH FUNCTIONS */
 async function searchIFSC(query) {
     const code = query.toUpperCase();
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(code)) throw new Error("INVALID_IFSC");
 
-    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(code)) {
-        throw new Error("INVALID_IFSC");
-    }
+    const data = await fetchData(`https://ifsc.razorpay.com/${encodeURIComponent(code)}`);
+    if (!data || !data.IFSC || !data.BANK) throw new Error("NO_DATA");
 
-    const data = await fetchData(
-        `https://ifsc.razorpay.com/${encodeURIComponent(code)}`
-    );
-
-    if (!data || !data.IFSC || !data.BANK) {
-        throw new Error("NO_DATA");
-    }
-
-    const mapsUrl =
-        "https://www.google.com/maps/search/?api=1&query=" +
+    const mapsUrl = "https://www.google.com/maps/search/?api=1&query=" +
         encodeURIComponent(`${data.BANK} ${data.BRANCH} ${data.CITY} ${data.ADDRESS}`);
 
     const details = [
@@ -334,19 +338,16 @@ async function searchIFSC(query) {
         `IFSC: ${data.IFSC}`,
         `MICR: ${data.MICR || "N/A"}`,
         `Address: ${data.ADDRESS || "N/A"}`,
-        `City: ${data.CITY || "N/A"}`,
-        `State: ${data.STATE || "N/A"}`
+        `City: ${data.CITY || "N/A"}, State: ${data.STATE || "N/A"}`
     ].join("\n");
 
     const services = ["UPI", "IMPS", "NEFT", "RTGS"];
+    const isFav = getFavorites().some(f => f.ifsc === data.IFSC);
 
     $("resultBox").innerHTML = `
         <div class="bank-card">
             <div class="bank-title">${escapeHTML(data.BANK)}</div>
-
-            <div class="branch-sub">
-                ${escapeHTML(data.BRANCH)} Branch
-            </div>
+            <div class="branch-sub">${escapeHTML(data.BRANCH)} Branch</div>
 
             <div class="detail-grid">
                 ${[
@@ -370,199 +371,154 @@ async function searchIFSC(query) {
             <div class="badges-row">
                 ${services.map(service => {
                     const available = data[service] === true;
-                    return `
-                        <span class="svc-badge ${available ? "" : "no"}">
-                            ${service}: ${available ? "Yes" : "Not confirmed"}
-                        </span>
-                    `;
+                    return `<span class="svc-badge ${available ? "" : "no"}">${service}: ${available ? "Yes" : "Not confirmed"}</span>`;
                 }).join("")}
             </div>
 
             <div class="action-btns">
-                <button type="button" class="copy-btn" id="copyIfscBtn">
-                    ${TEXT[currentLang].copy}
-                </button>
+                <button type="button" class="copy-btn" id="copyCodeOnlyBtn">${TEXT[currentLang].copyIfsc}</button>
+                <button type="button" class="copy-btn" id="copyIfscBtn">${TEXT[currentLang].copyAll}</button>
+                <button type="button" class="fav-btn ${isFav ? "saved" : ""}" id="favIfscBtn">${isFav ? "⭐ Saved" : "☆ Save"}</button>
+                <button type="button" class="share-btn" id="shareIfscBtn">📤 Share</button>
+                <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="maps-btn">📍 Map</a>
+                <button type="button" class="nearby-btn" id="nearbyBtn">📡 Nearby</button>
+                <a href="https://wa.me/?text=${encodeURIComponent(details)}" target="_blank" rel="noopener noreferrer" class="wa-btn">📲 WhatsApp</a>
+                <button type="button" class="report-btn" id="reportIfscBtn">⚠️ Report</button>
+            </div>
 
-                <a href="${mapsUrl}" target="_blank"
-                    rel="noopener noreferrer" class="maps-btn">
-                    📍 Google Maps
-                </a>
-
-                <a href="https://wa.me/?text=${encodeURIComponent(details)}"
-                    target="_blank" rel="noopener noreferrer" class="wa-btn">
-                    📲 WhatsApp
-                </a>
+            <div class="source-note">
+                Source: Razorpay IFSC Public API (RBI / NPCI records) • Checked: ${new Date().toLocaleDateString("en-IN")}. Please confirm with your bank before large transfers.
             </div>
         </div>
     `;
 
     $("resultBox").classList.remove("hidden");
-
-    $("copyIfscBtn").addEventListener("click", function() {
-        copyText(details, this);
-    });
-
+    $("copyCodeOnlyBtn").addEventListener("click", function () { copyText(data.IFSC, this); });
+    $("copyIfscBtn").addEventListener("click", function () { copyText(details, this); });
+    $("favIfscBtn").addEventListener("click", () => toggleFavorite(data.IFSC, data.BRANCH));
+    $("shareIfscBtn").addEventListener("click", () => shareResult(`${data.BANK} IFSC`, details));
+    $("nearbyBtn").addEventListener("click", () => findNearbyBank(data.BANK));
+    $("reportIfscBtn").addEventListener("click", () => reportWrongData(`IFSC ${data.IFSC} (${data.BANK})`));
     saveRecent("ifsc", code);
 }
 
-/* ==========================================
-   PINCODE SEARCH
-========================================== */
-
 async function searchPincode(query) {
-    if (!/^\d{6}$/.test(query)) {
-        throw new Error("INVALID_PIN");
-    }
-
-    const json = await fetchData(
-        `https://api.postalpincode.in/pincode/${encodeURIComponent(query)}`
-    );
-
-    if (!json[0] || json[0].Status !== "Success" || !json[0].PostOffice) {
-        throw new Error("NO_DATA");
-    }
-
+    if (!/^\d{6}$/.test(query)) throw new Error("INVALID_PIN");
+    const json = await fetchData(`https://api.postalpincode.in/pincode/${encodeURIComponent(query)}`);
+    if (!json[0] || json[0].Status !== "Success" || !json[0].PostOffice) throw new Error("NO_DATA");
     renderPostOffices(json[0].PostOffice);
-
     saveRecent("pincode", query);
 }
 
-/* ==========================================
-   CITY / AREA SEARCH
-========================================== */
-
 async function searchArea(query) {
-    if (query.length < 3) {
-        throw new Error("SHORT_AREA");
-    }
-
-    const json = await fetchData(
-        `https://api.postalpincode.in/postoffice/${encodeURIComponent(query)}`
-    );
-
-    if (!json[0] || json[0].Status !== "Success" || !json[0].PostOffice) {
-        throw new Error("NO_DATA");
-    }
-
-    const list = json[0].PostOffice.slice(0, 20);
-
-    renderPostOffices(list);
-
+    if (query.length < 3) throw new Error("SHORT_AREA");
+    const json = await fetchData(`https://api.postalpincode.in/postoffice/${encodeURIComponent(query)}`);
+    if (!json[0] || json[0].Status !== "Success" || !json[0].PostOffice) throw new Error("NO_DATA");
+    renderPostOffices(json[0].PostOffice.slice(0, 20));
     saveRecent("area", query);
 }
-
-/* ==========================================
-   RENDER POST OFFICES
-========================================== */
 
 function renderPostOffices(list) {
     $("resultBox").innerHTML = `
         <div class="po-list">
-            ${list.map(po => {
-                const details =
-                    `${po.Name} (${po.Pincode})\n${po.District}, ${po.State}`;
-
+            ${list.map((po, idx) => {
+                const details = `${po.Name} (${po.Pincode})\nDivision: ${po.Division || "N/A"}\nDistrict: ${po.District}, State: ${po.State}\nStatus: ${po.DeliveryStatus}`;
                 return `
                     <div class="po-card">
                         <div>
-                            <div class="po-name">
-                                ${escapeHTML(po.Name)}
-                            </div>
-
+                            <div class="po-name">${escapeHTML(po.Name)} <small>(${escapeHTML(po.BranchType || "Post Office")})</small></div>
                             <div class="po-meta">
-                                ${escapeHTML(po.Block || po.Taluk || "")},
-                                ${escapeHTML(po.District)},
-                                ${escapeHTML(po.State)}
-                                • ${escapeHTML(po.DeliveryStatus)}
+                                <strong>Division:</strong> ${escapeHTML(po.Division || "N/A")} •
+                                <strong>District:</strong> ${escapeHTML(po.District)},
+                                <strong>State:</strong> ${escapeHTML(po.State)} •
+                                ${escapeHTML(po.DeliveryStatus)}
                             </div>
                         </div>
-
                         <div class="po-right">
-                            <div class="po-pin">
-                                ${escapeHTML(po.Pincode)}
-                            </div>
-
-                            <a href="https://wa.me/?text=${encodeURIComponent(details)}"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="wa-btn">
-                                📲
-                            </a>
+                            <div class="po-pin">${escapeHTML(po.Pincode)}</div>
+                            <button type="button" class="share-btn po-copy-btn" data-idx="${idx}" title="Copy Pincode">📋</button>
+                            <button type="button" class="share-btn po-share-btn" data-idx="${idx}" title="Share">📤</button>
+                            <a href="https://wa.me/?text=${encodeURIComponent(details)}" target="_blank" rel="noopener noreferrer" class="wa-btn">📲</a>
                         </div>
                     </div>
                 `;
             }).join("")}
         </div>
+        <div class="source-note">
+            Source: India Post Public API (api.postalpincode.in) • Checked: ${new Date().toLocaleDateString("en-IN")}.
+        </div>
     `;
+
+    $("resultBox").querySelectorAll(".po-copy-btn").forEach(btn => {
+        const po = list[Number(btn.dataset.idx)];
+        btn.addEventListener("click", function () { copyText(po.Pincode, this); });
+    });
+
+    $("resultBox").querySelectorAll(".po-share-btn").forEach(btn => {
+        const po = list[Number(btn.dataset.idx)];
+        const details = `${po.Name} (${po.Pincode})\nDivision: ${po.Division || "N/A"}\n${po.District}, ${po.State}`;
+        btn.addEventListener("click", () => shareResult(`Pincode ${po.Pincode}`, details));
+    });
 
     $("resultBox").classList.remove("hidden");
 }
 
-/* ==========================================
-   MAIN SEARCH SYSTEM
-========================================== */
-
 document.addEventListener("DOMContentLoaded", () => {
-
     const form = $("lookupForm");
     const searchBtn = $("searchBtn");
-
     let searching = false;
 
+    renderFavorites();
     renderRecent();
     switchMode("ifsc");
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
-
         if (searching) return;
 
         const query = $("searchInput").value.trim();
+        if (!query) { setStatus(TEXT[currentLang].empty, "error"); return; }
 
-        if (!query) {
-            setStatus(TEXT[currentLang].empty, "error");
+        /* SMART AUTO-DETECT SUGGESTION */
+        if (currentMode === "ifsc" && /^\d{6}$/.test(query)) {
+            switchMode("pincode");
+            quickFill(query);
             return;
         }
 
+        lastRetryFn = () => form.requestSubmit();
         searching = true;
         searchBtn.disabled = true;
         searchBtn.textContent = TEXT[currentLang].loading;
-
         $("resultBox").innerHTML = "";
         $("resultBox").classList.add("hidden");
-
         setStatus(TEXT[currentLang].fetching, "info");
 
         try {
             if (currentMode === "ifsc") {
                 await searchIFSC(query);
                 setStatus(TEXT[currentLang].verified, "success");
-
             } else if (currentMode === "pincode") {
                 await searchPincode(query);
                 setStatus(TEXT[currentLang].found, "success");
-
             } else {
                 await searchArea(query);
                 setStatus(TEXT[currentLang].found, "success");
             }
-
         } catch (error) {
-
             const messages = {
                 INVALID_IFSC: TEXT[currentLang].invalidIFSC,
                 INVALID_PIN: TEXT[currentLang].invalidPIN,
                 SHORT_AREA: TEXT[currentLang].shortArea,
                 NO_DATA: TEXT[currentLang].noData,
-                TIMEOUT: "Request timed out. Please try again.",
-                API_ERROR: "Server unavailable. Please try later."
+                TIMEOUT: "Request timed out. Check internet & retry.",
+                API_ERROR: "Server busy. Please retry."
             };
-
-            setStatus(
-                messages[error.message] || TEXT[currentLang].error,
-                "error"
-            );
-
+            const canRetry = !["INVALID_IFSC", "INVALID_PIN", "SHORT_AREA"].includes(error.message);
+            const smartBtn = error.message === "INVALID_IFSC"
+                ? { label: "🏛️ Open Find by Bank", action: () => $("tabBank").click() }
+                : null;
+            setStatus(messages[error.message] || TEXT[currentLang].error, "error", canRetry, smartBtn);
         } finally {
             searching = false;
             searchBtn.disabled = false;
@@ -570,18 +526,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /* FAQ ACCORDION */
-
     document.querySelectorAll(".faq-q").forEach(btn => {
         btn.addEventListener("click", () => {
             const item = btn.closest(".faq-item");
             const isOpen = item.classList.toggle("open");
-
             const symbol = btn.querySelector("span");
             if (symbol) symbol.textContent = isOpen ? "−" : "+";
         });
     });
-
 });
 
 if ("serviceWorker" in navigator) {
@@ -591,9 +543,8 @@ if ("serviceWorker" in navigator) {
 }
 
 /* ==========================================
-   LIGHT / DARK MODE + FIXED BANK FINDER
+   DEFAULT LIGHT MODE + FIXED BANK FINDER
 ========================================== */
-
 function toggleTheme() {
     const isLight = document.body.classList.toggle("light-mode");
     const btn = $("themeToggle");
@@ -601,7 +552,11 @@ function toggleTheme() {
     localStorage.setItem("ifscpin_theme", isLight ? "light" : "dark");
 }
 
-if (localStorage.getItem("ifscpin_theme") === "light") {
+if (localStorage.getItem("ifscpin_theme") === "dark") {
+    document.body.classList.remove("light-mode");
+    const btn = $("themeToggle");
+    if (btn) btn.textContent = "☀️";
+} else {
     document.body.classList.add("light-mode");
     const btn = $("themeToggle");
     if (btn) btn.textContent = "🌙";
@@ -649,10 +604,7 @@ async function loadAllBanks() {
 function selectQuickBank(code) {
     const sel = $("bfBank");
     if (!banksLoaded) {
-        loadAllBanks().then(() => {
-            sel.value = code;
-            sel.dispatchEvent(new Event("change"));
-        });
+        loadAllBanks().then(() => { sel.value = code; sel.dispatchEvent(new Event("change")); });
     } else {
         sel.value = code;
         sel.dispatchEvent(new Event("change"));
@@ -669,9 +621,7 @@ async function fetchBankJson(bankcode) {
             const res = await fetch(url);
             if (!res.ok) continue;
             const raw = await res.json();
-            return Array.isArray(raw)
-                ? raw
-                : Object.entries(raw).map(([ifsc, obj]) => ({ IFSC: ifsc, ...obj }));
+            return Array.isArray(raw) ? raw : Object.entries(raw).map(([ifsc, obj]) => ({ IFSC: ifsc, ...obj }));
         } catch {}
     }
     return null;
@@ -750,10 +700,7 @@ $("bfDistrict").addEventListener("change", function () {
     }
 
     const branches = currentBankBranches
-        .filter((b) =>
-            (b.STATE || "OTHER").toUpperCase() === state &&
-            (b.DISTRICT || b.CITY || "OTHER").toUpperCase() === district
-        )
+        .filter((b) => (b.STATE || "OTHER").toUpperCase() === state && (b.DISTRICT || b.CITY || "OTHER").toUpperCase() === district)
         .sort((a, b) => (a.BRANCH || "").localeCompare(b.BRANCH || ""));
 
     brSel.innerHTML = '<option value="">-- Select Branch --</option>' +
@@ -764,12 +711,13 @@ $("bfDistrict").addEventListener("change", function () {
 $("bfBranch").addEventListener("change", async function () {
     const ifsc = this.value;
     if (!ifsc) return;
+    lastRetryFn = () => this.dispatchEvent(new Event("change"));
     $("resultBox").classList.add("hidden");
     setStatus(TEXT[currentLang].fetching, "info");
     try {
         await searchIFSC(ifsc);
         setStatus(TEXT[currentLang].verified, "success");
     } catch {
-        setStatus(TEXT[currentLang].error, "error");
+        setStatus(TEXT[currentLang].error, "error", true);
     }
 });
