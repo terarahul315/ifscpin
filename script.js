@@ -587,3 +587,221 @@ if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").catch(() => {});
     });
 }
+/* ==========================================
+   FIND BY BANK -> STATE -> DISTRICT -> BRANCH
+========================================== */
+const STATE_ISO = {
+    "ANDAMAN AND NICOBAR ISLANDS": "IN-AN",
+    "ANDHRA PRADESH": "IN-AP",
+    "ARUNACHAL PRADESH": "IN-AR",
+    "ASSAM": "IN-AS",
+    "BIHAR": "IN-BR",
+    "CHANDIGARH": "IN-CH",
+    "CHHATTISGARH": "IN-CT",
+    "DADRA AND NAGAR HAVELI": "IN-DN",
+    "DADRA AND NAGAR HAVELI AND DAMAN AND DIU": "IN-DH",
+    "DAMAN AND DIU": "IN-DD",
+    "DELHI": "IN-DL",
+    "GOA": "IN-GA",
+    "GUJARAT": "IN-GJ",
+    "HARYANA": "IN-HR",
+    "HIMACHAL PRADESH": "IN-HP",
+    "JAMMU AND KASHMIR": "IN-JK",
+    "JHARKHAND": "IN-JH",
+    "KARNATAKA": "IN-KA",
+    "KERALA": "IN-KL",
+    "LADAKH": "IN-LA",
+    "LAKSHADWEEP": "IN-LD",
+    "MADHYA PRADESH": "IN-MP",
+    "MAHARASHTRA": "IN-MH",
+    "MANIPUR": "IN-MN",
+    "MEGHALAYA": "IN-ML",
+    "MIZORAM": "IN-MZ",
+    "NAGALAND": "IN-NL",
+    "ODISHA": "IN-OR",
+    "ORISSA": "IN-OR",
+    "PUDUCHERRY": "IN-PY",
+    "PUNJAB": "IN-PB",
+    "RAJASTHAN": "IN-RJ",
+    "SIKKIM": "IN-SK",
+    "TAMIL NADU": "IN-TN",
+    "TELANGANA": "IN-TG",
+    "TRIPURA": "IN-TR",
+    "UTTAR PRADESH": "IN-UP",
+    "UTTARAKHAND": "IN-UT",
+    "WEST BENGAL": "IN-WB"
+};
+
+let banksLoaded = false;
+
+function openBankFinder(btn) {
+    document.querySelectorAll(".mode-tab").forEach((t) => t.classList.remove("active"));
+    btn.classList.add("active");
+    $("lookupForm").classList.add("hidden");
+    $("examplesRow").classList.add("hidden");
+    $("bankFinderBox").classList.remove("hidden");
+    $("resultBox").classList.add("hidden");
+    $("statusMsg").textContent = "";
+    if (!banksLoaded) loadAllBanks();
+}
+
+["tabIfsc", "tabPin", "tabArea"].forEach((id) => {
+    const el = $(id);
+    if (el) {
+        el.addEventListener("click", () => {
+            $("bankFinderBox").classList.add("hidden");
+            $("lookupForm").classList.remove("hidden");
+            $("examplesRow").classList.remove("hidden");
+        });
+    }
+});
+
+async function loadAllBanks() {
+    const sel = $("bfBank");
+    try {
+        const res = await fetch("https://cdn.jsdelivr.net/gh/razorpay/ifsc@master/src/banknames.json");
+        const data = await res.json();
+        const entries = Object.entries(data).sort((a, b) => a[1].localeCompare(b[1]));
+        sel.innerHTML = '<option value="">-- Select Bank --</option>' +
+            entries.map(([code, name]) => `<option value="${code}">${name} (${code})</option>`).join("");
+        banksLoaded = true;
+    } catch {
+        sel.innerHTML = '<option value="">Failed to load banks. Refresh page.</option>';
+    }
+}
+
+function selectQuickBank(code) {
+    const sel = $("bfBank");
+    if (!banksLoaded) {
+        loadAllBanks().then(() => {
+            sel.value = code;
+            sel.dispatchEvent(new Event("change"));
+        });
+    } else {
+        sel.value = code;
+        sel.dispatchEvent(new Event("change"));
+    }
+}
+
+$("bfBank").addEventListener("change", async function () {
+    const bankcode = this.value;
+    const stateSel = $("bfState");
+    const distSel = $("bfDistrict");
+    const brSel = $("bfBranch");
+    $("resultBox").classList.add("hidden");
+    distSel.innerHTML = '<option value="">Select State first</option>';
+    distSel.disabled = true;
+    brSel.innerHTML = '<option value="">Select District first</option>';
+    brSel.disabled = true;
+
+    if (!bankcode) {
+        stateSel.innerHTML = '<option value="">Select Bank first</option>';
+        stateSel.disabled = true;
+        return;
+    }
+
+    stateSel.innerHTML = '<option value="">Loading states...</option>';
+    stateSel.disabled = true;
+    try {
+        const res = await fetch(`https://ifsc.razorpay.com/places?bankcode=${encodeURIComponent(bankcode)}`);
+        const data = await res.json();
+        const states = (data.states || []).sort();
+        stateSel.innerHTML = '<option value="">-- Select State --</option>' +
+            states.map((s) => `<option value="${s}">${s}</option>`).join("");
+        stateSel.disabled = false;
+    } catch {
+        stateSel.innerHTML = '<option value="">No states found</option>';
+    }
+});
+
+$("bfState").addEventListener("change", async function () {
+    const bankcode = $("bfBank").value;
+    const stateName = this.value;
+    const distSel = $("bfDistrict");
+    const brSel = $("bfBranch");
+    $("resultBox").classList.add("hidden");
+    brSel.innerHTML = '<option value="">Select District first</option>';
+    brSel.disabled = true;
+
+    if (!stateName) {
+        distSel.innerHTML = '<option value="">Select State first</option>';
+        distSel.disabled = true;
+        return;
+    }
+
+    const iso = STATE_ISO[stateName.toUpperCase()] || "";
+    distSel.innerHTML = '<option value="">Loading districts...</option>';
+    distSel.disabled = true;
+    try {
+        const res = await fetch(`https://ifsc.razorpay.com/places?bankcode=${encodeURIComponent(bankcode)}&state=${encodeURIComponent(iso)}`);
+        const data = await res.json();
+        const districts = (data.districts || []).sort();
+        distSel.innerHTML = '<option value="">-- Select District --</option>' +
+            districts.map((d) => `<option value="${d}">${d}</option>`).join("");
+        distSel.disabled = false;
+    } catch {
+        distSel.innerHTML = '<option value="">No districts found</option>';
+    }
+});
+
+$("bfDistrict").addEventListener("change", async function () {
+    const bankcode = $("bfBank").value;
+    const stateName = $("bfState").value;
+    const district = this.value;
+    const brSel = $("bfBranch");
+    $("resultBox").classList.add("hidden");
+
+    if (!district) {
+        brSel.innerHTML = '<option value="">Select District first</option>';
+        brSel.disabled = true;
+        return;
+    }
+
+    const iso = STATE_ISO[stateName.toUpperCase()] || "";
+    brSel.innerHTML = '<option value="">Loading branches...</option>';
+    brSel.disabled = true;
+    try {
+        const res = await fetch(`https://ifsc.razorpay.com/places?bankcode=${encodeURIComponent(bankcode)}&state=${encodeURIComponent(iso)}&district=${encodeURIComponent(district)}`);
+        const data = await res.json();
+        const branches = (data.branches || []).sort();
+        brSel.innerHTML = '<option value="">-- Select Branch --</option>' +
+            branches.map((b) => `<option value="${b}">${b}</option>`).join("");
+        brSel.disabled = false;
+    } catch {
+        brSel.innerHTML = '<option value="">No branches found</option>';
+    }
+});
+
+$("bfBranch").addEventListener("change", async function () {
+    const bankcode = $("bfBank").value;
+    const stateName = $("bfState").value;
+    const district = $("bfDistrict").value;
+    const branch = this.value;
+    if (!branch) return;
+
+    const iso = STATE_ISO[stateName.toUpperCase()] || "";
+    $("statusMsg").textContent = "Fetching IFSC details...";
+    try {
+        let offset = 0;
+        let found = null;
+        while (!found && offset <= 200) {
+            const res = await fetch(`https://ifsc.razorpay.com/search?bankcode=${encodeURIComponent(bankcode)}&state=${encodeURIComponent(iso)}&limit=50&offset=${offset}`);
+            const list = await res.json();
+            if (!Array.isArray(list) || list.length === 0) break;
+            found = list.find((item) => item.BRANCH && item.BRANCH.toUpperCase() === branch.toUpperCase() && (!item.DISTRICT || item.DISTRICT.toUpperCase() === district.toUpperCase()));
+            if (list.length < 50) break;
+            offset += 50;
+        }
+        if (found && found.IFSC) {
+            $("statusMsg").textContent = "✓ IFSC Code found!";
+            if (typeof quickFill === "function") {
+                $("tabIfsc").click();
+                quickFill(found.IFSC);
+            }
+        } else {
+            $("statusMsg").textContent = "Branch details not found. Try another branch.";
+        }
+    } catch {
+        $("statusMsg").textContent = "Error fetching branch details.";
+    }
+});
