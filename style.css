@@ -1442,3 +1442,40 @@ input:focus-visible {
         transition-duration: 0.01ms !important;
     }
 }
+/* BANK -> STATE -> DISTRICT -> BRANCH FINDER */
+.hidden { display: none !important; }
+
+.bank-finder {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.quick-banks-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.bf-select {
+    width: 100%;
+    padding: 13px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    background: #06142e;
+    color: #f8fbff;
+    font-size: 0.96rem;
+    outline: none;
+    cursor: pointer;
+}
+
+.bf-select:focus {
+    border-color: #00e5ff;
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.16);
+}
+
+.bf-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
