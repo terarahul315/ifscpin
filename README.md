@@ -40,17 +40,27 @@
 
 ## 📁 Project Structure
 
-```text
-ifscpin/
-├── index.html       # Main app UI & SEO meta tags
-├── style.css        # Responsive neon blue/cyan theme
-├── script.js        # IFSC, Pincode, Area search & EN/HI logic
-├── manifest.json    # PWA manifest configuration
-├── sw.js            # Network-first Service Worker
-├── favicon.png      # App icon & brand logo
-├── privacy.html     # Privacy Policy
-├── terms.html       # Terms of Service
-└── README.md        # Project documentation
+    ifscpin/
+    ├── index.html       # Main app UI & SEO meta tags
+    ├── style.css        # Responsive neon blue/cyan theme
+    ├── script.js        # IFSC, Pincode, Area search & EN/HI logic
+    ├── manifest.json    # PWA manifest configuration
+    ├── sw.js            # Network-first Service Worker
+    ├── favicon.png      # App icon & brand logo
+    ├── privacy.html     # Privacy Policy
+    ├── terms.html       # Terms of Service
+    └── README.md        # Project documentation
+
+---
+
+## 👨‍💻 Author & Support
+
+Built by **Rahul Mishra** ([GitHub](https://github.com/terarahul315))
+
+- **Email:** rm6129306@gmail.com
+- **Instagram:** [@_tera_rahul_315](https://instagram.com/_tera_rahul_315)
+- **Other Project:** [ReelSave — Instagram Reels & Audio Downloader](https://reelsave-rouge.vercel.app/)
+
 
 # ifscpin
 Free Indian Bank IFSC Code, Google Maps &amp; India Post Pincode Finder.
