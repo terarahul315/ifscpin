@@ -24,9 +24,8 @@
     <link rel="stylesheet" href="style.css">
 
     <script src="script.js" defer></script>
-        <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="favicon.png">
-
 </head>
 
 <body>
@@ -78,6 +77,7 @@
                 <button type="button" class="mode-tab active" data-mode="ifsc" onclick="switchMode('ifsc')" id="tabIfsc">🏦 IFSC Lookup</button>
                 <button type="button" class="mode-tab" data-mode="pincode" onclick="switchMode('pincode')" id="tabPin">📮 Pincode</button>
                 <button type="button" class="mode-tab" data-mode="area" onclick="switchMode('area')" id="tabArea">🔍 City / Area</button>
+                <button type="button" class="mode-tab" data-mode="bank" onclick="openBankFinder(this)" id="tabBank">🏛️ Find by Bank</button>
             </div>
 
             <!-- SEARCH CARD -->
@@ -97,6 +97,38 @@
                         <button type="submit" id="searchBtn" class="btn-search">Search</button>
                     </div>
                 </form>
+
+                <!-- FIND BY BANK (WHEN IFSC IS UNKNOWN) -->
+                <div id="bankFinderBox" class="bank-finder hidden">
+                    <div class="quick-banks-row">
+                        <button type="button" class="ex-chip" onclick="selectQuickBank('SBIN')">SBI</button>
+                        <button type="button" class="ex-chip" onclick="selectQuickBank('HDFC')">HDFC</button>
+                        <button type="button" class="ex-chip" onclick="selectQuickBank('ICIC')">ICICI</button>
+                        <button type="button" class="ex-chip" onclick="selectQuickBank('PUNB')">PNB</button>
+                        <button type="button" class="ex-chip" onclick="selectQuickBank('UTIB')">Axis</button>
+                        <button type="button" class="ex-chip" onclick="selectQuickBank('BARB')">BOB</button>
+                    </div>
+
+                    <label class="input-label" for="bfBank">1. Select Bank</label>
+                    <select id="bfBank" class="bf-select">
+                        <option value="">Loading banks...</option>
+                    </select>
+
+                    <label class="input-label" for="bfState">2. Select State</label>
+                    <select id="bfState" class="bf-select" disabled>
+                        <option value="">Select Bank first</option>
+                    </select>
+
+                    <label class="input-label" for="bfDistrict">3. Select District</label>
+                    <select id="bfDistrict" class="bf-select" disabled>
+                        <option value="">Select State first</option>
+                    </select>
+
+                    <label class="input-label" for="bfBranch">4. Select Branch</label>
+                    <select id="bfBranch" class="bf-select" disabled>
+                        <option value="">Select District first</option>
+                    </select>
+                </div>
 
                 <!-- EXAMPLE SEARCHES -->
                 <div class="examples-row" id="examplesRow">
