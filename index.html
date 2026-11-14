@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <meta name="theme-color" content="#030a1c">
-    <meta name="color-scheme" content="dark">
+    <meta name="color-scheme" content="light dark">
 
     <title>IFSCPin – IFSC Code & Pincode Finder India</title>
 
@@ -19,16 +19,14 @@
     <meta property="og:image" content="favicon.png">
     <meta name="google-site-verification" content="2zkR8C_0oChDXHNMMM1LnMh7ZDgH-DrjN1tBFUv_yv4" />
 
-    <!-- BROWSER TAB ICON -->
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="style.css">
-
-    <script src="script.js" defer></script>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="favicon.png">
+    <script src="script.js" defer></script>
 </head>
 
-<body>
+<body class="light-mode">
 
 <div class="glow-bg glow-left"></div>
 <div class="glow-bg glow-right"></div>
@@ -43,7 +41,7 @@
     <nav class="nav-links" aria-label="Main navigation">
         <a href="#top">Home</a>
         <a href="#popular">Banks</a>
-        <a href="#support">Contact</a>
+        <a href="#support">Feedback</a>
         <a href="https://reelsave-rouge.vercel.app/" target="_blank" rel="noopener noreferrer" class="nav-promo">
             ⚡ ReelSave
         </a>
@@ -52,7 +50,7 @@
     <div class="lang-switch">
         <button type="button" class="lang-btn active" id="langEn" onclick="setLang('en')">EN</button>
         <button type="button" class="lang-btn" id="langHi" onclick="setLang('hi')">हिंदी</button>
-                <button type="button" class="theme-btn" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle Light or Dark Mode">☀️</button>
+        <button type="button" class="theme-btn" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle Dark or Light Mode">🌙</button>
     </div>
 </header>
 
@@ -62,15 +60,14 @@
     <!-- HERO SECTION -->
     <section class="hero-grid">
         <div class="hero-left">
-            <div class="trust-badge" id="trustBadge">✓ Free Bank & Postal Code Search</div>
+            <div class="trust-badge" id="trustBadge">✓ Free Bank & India Post Directory</div>
 
             <h1 id="heroTitle">
-                Find IFSC Code <br>
-                <span class="cyan-text">Quickly & Easily</span>
+                Find Bank <span class="cyan-text">IFSC</span> & <span class="cyan-text">Pincode</span> Instantly
             </h1>
 
             <p class="subtitle" id="heroSub">
-                Search Indian bank branch IFSC codes, branch details on Maps and India Post PIN codes with a simple search.
+                Find bank branch details, IFSC codes, MICR information and India Post Pincodes.
             </p>
 
             <!-- SEARCH MODES -->
@@ -90,7 +87,7 @@
                         <input
                             type="text"
                             id="searchInput"
-                            placeholder="Enter IFSC Code, Pincode, or Area..."
+                            placeholder="e.g. SBIN0000691"
                             autocomplete="off"
                             required
                             aria-label="Search IFSC code or pincode"
@@ -143,7 +140,8 @@
                 <div id="resultBox" class="result-box hidden"></div>
             </section>
 
-            <!-- RECENT SEARCHES -->
+            <!-- FAVORITES & RECENT SEARCHES -->
+            <div id="favoriteBranches"></div>
             <div id="recentSearches"></div>
         </div>
 
@@ -178,23 +176,23 @@
     <section class="features-4">
         <div class="f-card">
             <div class="f-icon">⚡</div>
-            <h3>Fast Search</h3>
-            <p>Easy and quick lookup</p>
-        </div>
-        <div class="f-card">
-            <div class="f-icon">🛡️</div>
-            <h3>Useful Details</h3>
-            <p>Bank branch information</p>
+            <h3>Smart Search</h3>
+            <p>IFSC, Pincode, City & Bank</p>
         </div>
         <div class="f-card">
             <div class="f-icon">📍</div>
-            <h3>All India Search</h3>
-            <p>Bank and postal lookup</p>
+            <h3>Nearby & Maps</h3>
+            <p>Branch directions & GPS</p>
+        </div>
+        <div class="f-card">
+            <div class="f-icon">⭐</div>
+            <h3>Save Favorites</h3>
+            <p>One-tap copy & history</p>
         </div>
         <div class="f-card">
             <div class="f-icon">💬</div>
-            <h3>Easy to Use</h3>
-            <p>Simple search experience</p>
+            <h3>EN / हिंदी Ready</h3>
+            <p>Easy mobile experience</p>
         </div>
     </section>
 
@@ -202,12 +200,12 @@
     <section class="popular-banks" id="popular">
         <h2 id="howHeading">Popular Banks</h2>
         <div class="banks-pill-row">
-            <button type="button" class="bank-pill" onclick="switchMode('ifsc'); quickFill('SBIN0000691')">🏦 SBI</button>
-            <button type="button" class="bank-pill" onclick="switchMode('ifsc'); quickFill('HDFC0000001')">🏛️ HDFC Bank</button>
-            <button type="button" class="bank-pill" onclick="switchMode('ifsc'); quickFill('ICIC0000001')">💳 ICICI Bank</button>
-            <button type="button" class="bank-pill" onclick="switchMode('ifsc'); quickFill('KKBK0000958')">🔴 Kotak Mahindra</button>
-            <button type="button" class="bank-pill" onclick="switchMode('ifsc'); quickFill('UTIB0000001')">🟣 Axis Bank</button>
-            <button type="button" class="bank-pill" onclick="switchMode('ifsc'); quickFill('PUNB0001000')">🟡 PNB</button>
+            <button type="button" class="bank-pill" onclick="$('tabBank').click(); selectQuickBank('SBIN')">🏦 SBI</button>
+            <button type="button" class="bank-pill" onclick="$('tabBank').click(); selectQuickBank('HDFC')">🏛️ HDFC Bank</button>
+            <button type="button" class="bank-pill" onclick="$('tabBank').click(); selectQuickBank('ICIC')">💳 ICICI Bank</button>
+            <button type="button" class="bank-pill" onclick="$('tabBank').click(); selectQuickBank('KKBK')">🔴 Kotak Mahindra</button>
+            <button type="button" class="bank-pill" onclick="$('tabBank').click(); selectQuickBank('UTIB')">🟣 Axis Bank</button>
+            <button type="button" class="bank-pill" onclick="$('tabBank').click(); selectQuickBank('PUNB')">🟡 PNB</button>
         </div>
     </section>
 
@@ -216,13 +214,12 @@
         <div class="ad-box">Advertisement</div>
     </section>
 
-    <!-- CONTACT SUPPORT -->
+    <!-- CONTACT & FEEDBACK -->
     <section class="support-section" id="support">
-        <h2>Need Help or Have a Query?</h2>
-        <p class="support-sub">Have a question, suggestion or website feedback? Connect directly:</p>
+        <h2>Feedback, Report & Support</h2>
+        <p class="support-sub">Website kaisi lagi, koi jankari galat hai ya naya feature chahiye? Seedha batayein:</p>
 
         <div class="contact-cards-grid">
-            <!-- EMAIL -->
             <a href="mailto:rm6129306@gmail.com" class="contact-card gmail-card">
                 <div class="c-icon">
                     <svg viewBox="0 0 24 24" fill="currentColor">
@@ -235,7 +232,6 @@
                 </div>
             </a>
 
-            <!-- WHATSAPP -->
             <a href="https://wa.me/918934023097" target="_blank" rel="noopener noreferrer" class="contact-card wa-card">
                 <div class="c-icon">
                     <svg viewBox="0 0 24 24" fill="currentColor">
@@ -248,7 +244,6 @@
                 </div>
             </a>
 
-            <!-- INSTAGRAM -->
             <a href="https://instagram.com/_tera_rahul_315" target="_blank" rel="noopener noreferrer" class="contact-card ig-card">
                 <div class="c-icon">
                     <svg viewBox="0 0 24 24" fill="currentColor">
@@ -260,6 +255,16 @@
                     <div class="c-val">@_tera_rahul_315</div>
                 </div>
             </a>
+        </div>
+
+        <div class="feedback-card">
+            <h3>💬 Send Feedback or Report Wrong Data</h3>
+            <p>Koi IFSC/Pincode galat mile ya naya feature chahiye? Yahan likhkar bhejein:</p>
+            <div class="feedback-row">
+                <input type="text" id="feedbackInput" placeholder="Write feedback, wrong IFSC, or feature request..." aria-label="Feedback message">
+                <button type="button" class="btn-search" onclick="sendFeedback('wa')">📲 WhatsApp</button>
+                <button type="button" class="copy-btn" onclick="sendFeedback('email')">✉️ Email</button>
+            </div>
         </div>
     </section>
 
@@ -273,17 +278,17 @@
                     <span>+</span>
                 </button>
                 <div class="faq-a">
-                    <p>IFSC stands for Indian Financial System Code. It is an 11-character code used to identify bank branches for electronic fund transfers.</p>
+                    <p>IFSC stands for Indian Financial System Code. It is an 11-character code used to identify bank branches for NEFT, RTGS, and IMPS transfers.</p>
                 </div>
             </div>
 
             <div class="faq-item">
                 <button class="faq-q" type="button" aria-expanded="false">
-                    How can I find an India Post Pincode?
+                    How can I find an IFSC code if I don't know it?
                     <span>+</span>
                 </button>
                 <div class="faq-a">
-                    <p>Select the Pincode or City / Area tab, enter your location details and search for matching postal information.</p>
+                    <p>Tap the "Find by Bank" tab, choose your Bank, State, District, and Branch to view the IFSC code, MICR, address, and map link.</p>
                 </div>
             </div>
         </div>
@@ -297,6 +302,7 @@
         <div>
             <strong>IFSCPin</strong> — Bank & Postal Code Finder
             <p class="footer-note">
+                Data Sources: Razorpay IFSC Public API (RBI/NPCI) & India Post Public API •
                 Our Other Project:
                 <a href="https://reelsave-rouge.vercel.app/" target="_blank" rel="noopener noreferrer">⚡ ReelSave</a>
             </p>
@@ -305,7 +311,7 @@
         <div class="footer-links">
             <a href="privacy.html">Privacy Policy</a>
             <a href="terms.html">Terms</a>
-            <a href="#support">Contact</a>
+            <a href="#support">Feedback</a>
         </div>
     </div>
 
