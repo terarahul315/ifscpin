@@ -1885,3 +1885,99 @@ body.light-mode .status-msg.success {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* =====================================================
+   REELSAVE BUTTONS — NAVBAR + FOOTER
+===================================================== */
+
+/* NAVBAR REELSAVE BUTTON */
+.reelsave-nav-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    padding: 9px 16px;
+    border-radius: 30px;
+
+    background: linear-gradient(135deg, #087bff, #00c6ff);
+    border: 1px solid rgba(0, 229, 255, 0.45);
+
+    color: #ffffff !important;
+    font-size: 13px;
+    font-weight: 850;
+
+    box-shadow: 0 4px 16px rgba(0, 145, 255, 0.25);
+    transition: all 0.25s ease;
+}
+
+.reelsave-nav-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 22px rgba(0, 145, 255, 0.40);
+    filter: brightness(1.12);
+}
+
+/* FOOTER REELSAVE BUTTON */
+.reelsave-footer-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    padding: 9px 16px;
+    border-radius: 10px;
+
+    background: linear-gradient(135deg, #087bff, #00c6ff);
+    border: 1px solid rgba(0, 229, 255, 0.40);
+
+    color: #ffffff !important;
+    font-size: 13px;
+    font-weight: 800;
+
+    box-shadow: 0 4px 15px rgba(0, 145, 255, 0.18);
+    transition: all 0.25s ease;
+}
+
+.reelsave-footer-link:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 7px 20px rgba(0, 145, 255, 0.32);
+}
+
+/* LIGHT MODE */
+body.light-mode .reelsave-nav-link,
+body.light-mode .reelsave-footer-link {
+    color: #ffffff !important;
+}
+
+/* MOBILE NAVIGATION */
+@media (max-width: 650px) {
+    .nav-links {
+        display: flex;
+        order: 3;
+        width: 100%;
+
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 9px;
+
+        padding-top: 10px;
+    }
+
+    .nav-links a {
+        font-size: 12px;
+    }
+
+    .reelsave-nav-link {
+        padding: 8px 13px;
+        font-size: 12px;
+    }
+
+    .footer-links {
+        gap: 12px;
+    }
+
+    .reelsave-footer-link {
+        padding: 9px 13px;
+    }
+}
