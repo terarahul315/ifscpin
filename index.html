@@ -21,11 +21,8 @@
     <meta property="og:description" content="Find Indian bank branch IFSC codes and India Post PIN codes using IFSCPin.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://ifscpin.pages.dev/">
-    <!-- TODO: create a 1200x630 image named og-image.png and upload it next to index.html -->
-    <meta property="og:image" content="https://ifscpin.pages.dev/og-image.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta name="twitter:card" content="summary_large_image">
+    <meta property="og:image" content="https://ifscpin.pages.dev/favicon.png">
+    <meta name="twitter:card" content="summary">
 
     <meta name="google-site-verification" content="2zkR8C_0oChDXHNMMM1LnMh7ZDgH-DrjN1tBFUv_yv4">
 
@@ -34,18 +31,55 @@
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
 
+    <script src="script.js" defer></script>
     <script type="application/ld+json">
     {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "IFSCPin",
-        "url": "https://ifscpin.pages.dev/",
-        "description": "Search Indian bank IFSC codes, branches and India Post PIN codes.",
-        "inLanguage": ["en-IN", "hi-IN"]
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "name": "IFSCPin",
+          "url": "https://ifscpin.pages.dev/",
+          "inLanguage": ["en-IN", "hi-IN"]
+        },
+        {
+          "@type": "WebApplication",
+          "name": "IFSCPin",
+          "url": "https://ifscpin.pages.dev/",
+          "applicationCategory": "FinanceApplication",
+          "operatingSystem": "All",
+          "inLanguage": ["en", "hi"],
+          "description": "Free Indian Bank IFSC Code, MICR Code, Branch Finder, and India Post Pincode lookup PWA.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "INR"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is an IFSC Code and where is it used?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "IFSC stands for Indian Financial System Code. It is an 11-character code used to identify bank branches for NEFT, RTGS, and IMPS electronic fund transfers in India."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How can I find an IFSC code if I don't know it?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Open the Find by Bank tab on IFSCPin and select your Bank, State, District, and Branch to get the IFSC code, MICR code, address, and Google Maps location."
+              }
+            }
+          ]
+        }
+      ]
     }
     </script>
-
-    <script src="script.js" defer></script>
 </head>
 
 <body class="light-mode">
@@ -59,7 +93,7 @@
 <header class="navbar">
 
     <a href="/" class="brand" aria-label="IFSCPin Home">
-        <img src="favicon.png" alt="IFSCPin Logo" width="42" height="42" style="border-radius:11px;object-fit:cover;">
+        <img src="favicon.png" alt="IFSCPin Logo" width="42" height="42" style="width:42px;height:42px;border-radius:11px;object-fit:cover;">
         <span>IFSC<span class="brand-cyan">Pin</span></span>
     </a>
 
@@ -67,6 +101,7 @@
         <a href="#top">Home</a>
         <a href="#popular">Banks</a>
         <a href="#support">Feedback</a>
+        <a href="https://reelsave-rouge.vercel.app/" target="_blank" rel="noopener noreferrer" class="reelsave-pill">🎬 ReelSave</a>
     </nav>
 
     <div class="lang-switch">
@@ -269,7 +304,7 @@
         </div>
     </section>
 
-    <!-- ADVERTISEMENT SPACE (min-height stops the page from jumping when the ad loads) -->
+    <!-- ADVERTISEMENT SPACE -->
     <section class="ad-slot" aria-label="Advertisement">
         <div class="ad-box" style="min-height:100px;">
             <script async data-cfasync="false" src="https://bauval.org/21/9e882b041184546dfe40bb2e63c53b6b"></script>
@@ -300,7 +335,6 @@
         </p>
 
         <div class="contact-cards-grid">
-            <!-- The address is built by JavaScript at the bottom of the page so basic email scrapers do not pick it up -->
             <a href="#support" id="emailLink" class="contact-card gmail-card">
                 <div class="c-icon">
                     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -389,7 +423,7 @@
     </section>
 
 </main>
-    
+
 <!-- FOOTER -->
 <footer class="footer">
 
@@ -405,6 +439,8 @@
 
         <div class="footer-links">
             <a href="ifsc-code-kaise-nikale.html">IFSC Guide</a>
+            <a href="sbi-ifsc-code-finder.html">SBI IFSC Finder</a>
+            <a href="micr-code-branch-address-finder.html">MICR & Branch Finder</a>
             <a href="pincode-finder-india.html">Pincode Guide</a>
             <a href="top-banks-ifsc-code.html">Top Banks</a>
             <a href="lakhimpur-kheri-ifsc-pincode.html">Lakhimpur Kheri</a>
@@ -420,10 +456,8 @@
             <a href="privacy.html">Privacy Policy</a>
             <a href="terms.html">Terms</a>
             <a href="https://reelsave-rouge.vercel.app/" target="_blank" rel="noopener noreferrer" class="reelsave-pill">🎬 ReelSave</a>
-            <a href="sbi-ifsc-code-finder.html">SBI IFSC Finder</a>
-            <a href="micr-code-branch-address-finder.html">MICR & Branch Finder</a>
         </div>
-        
+
     </div>
 
     <p class="copyright">© 2026 IFSCPin. All Rights Reserved.</p>
@@ -431,7 +465,6 @@
 </footer>
 
 <script>
-    // Build the support email link at runtime (keeps the address out of the HTML source)
     (function () {
         var user = 'rm6129306', host = 'gmail.com';
         var link = document.getElementById('emailLink');
